@@ -58,7 +58,7 @@ elif args.output == "small_gif":
 elif args.output == "latest":
     convertcommand = ["/usr/bin/convert"] + [imgList[0]] + ["epic.png"]
 elif args.output == "iphone6s_wallpaper":
-    convertcommand = ["/usr/bin/convert", "-resize", "750x750", "-bordercolor", "black", "-border", "0x292"] + [imgList[1]] + ["epic.png"]
+    convertcommand = ["/usr/bin/convert", "-resize", "750x750", "-bordercolor", "black", "-border", "0x292"] + [imgList[0]] + ["epic.png"]
 elif args.output == "iphone6s_gif":
     convertcommand = ["/usr/bin/convert", "-delay", "50", "-resize", "750x750", "-bordercolor", "black", "-border", "0x292"] + imgList[::-1] + ["epic.gif"]
     
