@@ -22,7 +22,7 @@ if args.output == "gif":
     max_imgs = 22
 
 if args.count:
-    max_imgs = args.count
+    max_imgs = int(args.count)
 elif args.output != "gif":
     max_imgs = 1
 
@@ -36,15 +36,15 @@ while num_imgs < max_imgs:
     for entry in today_json:
         imgFile = entry[u'image'] + "." + img_format
         imgList.insert(0,imgFile)
-        print imgFile
+        num_imgs = num_imgs + 1
         if not os.path.isfile(imgFile):
-            imgUrl = "http://epic.gsfc.nasa.gov/epic-archive/" + img_format + "/" + entry[u'image'] + "." + img_format
+            imgUrl = "http://epic.gsfc.nasa.gov/epic-archive/" + img_format + "/" + imgFile
+            print "Getting %s" % imgUrl
             newImg = requests.get(imgUrl, stream=True)
             with open(imgFile, 'wb') as f:
                 for chunk in newImg.iter_content(chunk_size=1024): 
                     if chunk:
                         f.write(chunk)
-        num_imgs = num_imgs + 1
         if num_imgs >= max_imgs:
             break
     if num_imgs >= max_imgs:
