@@ -9,8 +9,8 @@ import subprocess
 
 parser = argparse.ArgumentParser(description='Fetch some cool stuff from DSCOVR\'s EPIC camera')
 parser.add_argument('-f', '--format', help='source image format (default png)')
-parser.add_argument('-o', '--output', help='latest or full_size_gif or small_gif or iphone6s_wallpaper or iphone6s_gif')
-parser.add_argument('-c', '--count', help='number of images to retrieve')
+parser.add_argument('-o', '--output', help='latest or gif (default latest)')
+parser.add_argument('-c', '--count', help='number of images to retrieve (default 1 if latest, 22 if gif)')
 args = parser.parse_args()
 
 if args.format:
@@ -18,12 +18,12 @@ if args.format:
 else:
     img_format = "png"
 
-if args.count:
-    max_imgs = args.count
-else:
+if args.output == "gif":
     max_imgs = 22
 
-if args.output == "iphone6s_wallpaper" or args.output == "latest":
+if args.count:
+    max_imgs = args.count
+elif args.output != "gif":
     max_imgs = 1
 
 today = date.today()
@@ -51,16 +51,10 @@ while num_imgs < max_imgs:
         break
     today = today - timedelta(1)
 
-if args.output == "full_size_gif":
-    convertcommand = ["/usr/bin/convert", "-delay", "50"] + imgList[::-1] + ["earthy.gif"]
-elif args.output == "small_gif":
+if args.output == "gif":
     convertcommand = ["/usr/bin/convert", "-delay", "50", "-resize", "500x500"] + imgList[::-1] + ["earthy.gif"]
-elif args.output == "latest":
+else:
     convertcommand = ["/usr/bin/convert"] + [imgList[0]] + ["epic.png"]
-elif args.output == "iphone6s_wallpaper":
-    convertcommand = ["/usr/bin/convert", "-resize", "750x750", "-bordercolor", "black", "-border", "0x292"] + [imgList[0]] + ["epic.png"]
-elif args.output == "iphone6s_gif":
-    convertcommand = ["/usr/bin/convert", "-delay", "50", "-resize", "750x750", "-bordercolor", "black", "-border", "0x292"] + imgList[::-1] + ["epic.gif"]
     
 print(convertcommand)
 subprocess.call(convertcommand)
