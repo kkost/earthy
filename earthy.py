@@ -1,61 +1,48 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python3.7 
 
-import argparse
-import requests
+import fire
+import urllib.request
+import shutil
 import json
 import os
 from datetime import date, timedelta
-import subprocess
 
-parser = argparse.ArgumentParser(description='Fetch some cool stuff from DSCOVR\'s EPIC camera')
-parser.add_argument('-f', '--format', help='source image format (default png)')
-parser.add_argument('-o', '--output', help='latest or gif (default latest)')
-parser.add_argument('-c', '--count', help='number of images to retrieve (default 1 if latest, 22 if gif)')
-args = parser.parse_args()
+OUTPUT_PATH = "/tmp/"
+IMAGE_LIST_URL_BASE = "http://epic.gsfc.nasa.gov/api/images.php?date="
+IMAGE_URL_BASE = "http://epic.gsfc.nasa.gov/epic-archive/"
+IMAGE_FORMAT = "png"
 
-if args.format:
-    img_format = args.format
-else:
-    img_format = "png"
+class Epic(object):
+    def __image_list(self, idate):
+        return json.loads(urllib.request.urlopen(IMAGE_LIST_URL_BASE + idate.strftime("%Y-%m-%d")).read().decode('utf-8'))
 
-if args.output == "gif":
-    max_imgs = 22
+    def __get_file(self, url, out_file):
+        print("Getting {}".format(url))
+        with urllib.request.urlopen(url) as response, open(out_file, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+        print("Wrote {}".format(out_file))
 
-if args.count:
-    max_imgs = int(args.count)
-elif args.output != "gif":
-    max_imgs = 1
+    def get_latest(self):
+        today = date.today()
 
-today = date.today()
-imgList = []
+        while True:
+            print("Checking images for {}".format(today))
 
-num_imgs = 0
-while num_imgs < max_imgs:
-    todayf = today.strftime("%Y-%m-%d")
-    today_json = json.loads(requests.get("http://epic.gsfc.nasa.gov/api/images.php?date=%s" % todayf).content)
-    for entry in today_json:
-        imgFile = entry[u'image'] + "." + img_format
-        imgList.insert(0,imgFile)
-        num_imgs = num_imgs + 1
-        if not os.path.isfile(imgFile):
-            imgUrl = "http://epic.gsfc.nasa.gov/epic-archive/" + img_format + "/" + imgFile
-            print "Getting %s" % imgUrl
-            newImg = requests.get(imgUrl, stream=True)
-            with open(imgFile, 'wb') as f:
-                for chunk in newImg.iter_content(chunk_size=1024): 
-                    if chunk:
-                        f.write(chunk)
-        if num_imgs >= max_imgs:
+            if not self.__image_list(today):
+                today = today - timedelta(1)
+                continue
+
+            img_name = self.__image_list(today)[-1][u'image'] + "." + IMAGE_FORMAT
+            out_file = OUTPUT_PATH + img_name
+
+            if not os.path.isfile(out_file):
+                url = IMAGE_URL_BASE + IMAGE_FORMAT + "/" + img_name
+                self.__get_file(url, out_file)
+            else:
+                print("{} exists".format(out_file))
+
             break
-    if num_imgs >= max_imgs:
-        break
-    today = today - timedelta(1)
 
-if args.output == "gif":
-    convertcommand = ["/usr/bin/convert", "-delay", "50", "-resize", "500x500"] + imgList[::-1] + ["earthy.gif"]
-else:
-    convertcommand = ["/usr/bin/convert"] + [imgList[0]] + ["epic.png"]
-    
-print(convertcommand)
-subprocess.call(convertcommand)
 
+if __name__ == '__main__':
+    fire.Fire(Epic)
